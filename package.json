@@ -18,6 +18,9 @@
     "express": "^4.17.1",
     "fs": "0.0.1-security",
     "http": "0.0.1-security",
-    "https": "^1.0.0"
+    "https": "^1.0.0",
+    "morgan": "^1.10.0",
+    "passport": "^0.4.1",
+    "passport-azure-ad": "^4.3.0"
   }
 }
