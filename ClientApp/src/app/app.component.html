@@ -42,13 +42,14 @@
     height: 60px;
     display: flex;
     align-items: center;
-    background-color: #1976d2;
-    color: white;
+    background-color: #3a4241;
+    color: #e1ffc4;
     font-weight: 600;
   }
 
   .toolbar img {
-    margin: 0 16px;
+    margin: 0px;
+    margin-right: 10px;
   }
 
   .toolbar #twitter-logo {
@@ -308,6 +309,7 @@
 
   .intuneDataTable {
     border-collapse: collapse;
+    font-size: .9em;
     /* width: 100%; */
     
   }
@@ -319,18 +321,28 @@
   }
   .intuneDataTable th,
   .intuneDataTable td {
-    border: solid 1px #cccccc;
+    border: transparent;
+    border-top: solid 1px #cccccc;
+    border-bottom: solid 1px #cccccc;
     max-height: 100px;
     /* overflow: hidden;
     text-overflow: ellipsis; */
-    padding: 2px 4px;
+    padding: 4px 6px;
+  }
+  .intuneDataTable thead th:first-child,
+  .intuneDataTable tbody tr td:first-child {
+    border-left: solid 1px #cccccc;
+  }
+  .intuneDataTable thead th:last-child,
+  .intuneDataTable tbody tr td:last-child {
+    border-right: solid 1px #cccccc;
   }
   .intuneDataTable tr:nth-child(4n+1) {
     background-color: #eee;
   }
   .datatable {
     position: absolute;
-    top: 60px;
+    top: 0px;
     left: 0px;
     right: 0px;
     bottom: 0px;
@@ -341,10 +353,12 @@
 
   .expandercell {
     background-color: transparent;
-    font-weight: bold;
+    transition: background-color .4s;
+    /* font-weight: bold; */
   }
   .expandercell:hover {
-    background-color: darkorange;
+    background-color: #66595B;
+    transition: background-color .4s;
   }
 
   .extraInfoCell {
@@ -353,6 +367,139 @@
   }
   .filter {
     padding: 20px;
+    padding-left: 100px;
+    vertical-align: middle;
+  }
+  .filter input {
+    outline: none;
+    border: solid 1px #e1ffc4;
+    background-color: #3a4241;
+    color: #e1ffc4;
+    padding: 4px;
+    border-radius: 7px;
+    width: 100px;
+    transition: width .4s;
+    z-index: 1;
+  }
+  .filter input:focus {
+    border: solid 1px #e1ffc4;
+    background-color: #e1ffc4;
+    color: #3a4241;
+    width: 300px;
+    transition: width .4s;
+  }
+
+  .toolbarlink {
+    color: #e1ffc4;
+  }
+  .toolbarlink:hover {
+    color: white !important;
+  }
+  .profilepanel {
+    display: none;
+    position: absolute;
+    top: 58px;
+    right: 4px;
+    height: 180px;
+    width: 300px;
+    border: solid 1px #dddddd;
+    background-color: #ffffff;
+    color: #3a4241;
+    z-index: 9999;
+    border-radius: 11px;
+    padding: 14px;
+    font-size: .85em;
+    box-shadow: 0px 0px 10px -5px #000000;
+    outline: none;
+  }
+  .profilepanel::before {
+    content: '';
+    position: absolute;
+    top: -20px;
+    right: 18px;
+    border: solid 10px transparent;
+    border-bottom-color: #dddddd;
+  }
+  .profilepanel::after {
+    content: '';
+    position: absolute;
+    top: -19px;
+    right: 18px;
+    border: solid 10px transparent;
+    border-bottom-color: #ffffff;
+  }
+  .profilepic {
+    border-radius: 40px;
+    border: solid 1px #3a4241;
+    outline: none;
+  }
+  .profilepic:focus ~ .profilepanel,
+  .profiledropdownarrow:focus ~ .profilepanel {
+    display: block;
+  }
+  .profilepanel:hover {
+    display: block;;
+  }
+  .profilepic2 {
+    border-radius: 7px;
+    border: solid 0px #cccccc;
+  }
+  .signout {
+    cursor: pointer;  
+  }
+  .signout:hover {
+    text-decoration: underline;
+  }
+  .hiddenpanel {
+    display: none;
+  }
+  .profiledropdownarrow {
+    display:inline-block;
+    width: 0px;
+    height: 0px;
+    border: solid 5px transparent;
+    border-top-color: #e1ffc4;
+    outline: none;
+  } 
+  .expandarrow g path {
+    fill: #2c544f;
+  }
+  .expandercell:hover .expandarrow g path {
+    fill: #e1ffc4;
+  }
+
+  .filtertext::after {
+    box-sizing: border-box;
+    display: inline-block;
+    position: absolute;
+    content: "Filter...";
+    color: #e1ffc4;
+    margin-left: -100px;
+    margin-top: 2px;
+    font-weight: normal;
+    font-style: italic;
+    z-index: 0;
+    pointer-events: none
+  }
+  .sortDownArrow {
+    display: inline-block;
+    width: 0px;
+    height: 0px;
+    border: solid 5px transparent;
+    border-top-color: black;
+    position: absolute;
+    margin-top: 8px;
+    margin-left: 4px;
+  }
+  .sortUpArrow {
+    display: inline-block;
+    width: 0px;
+    height: 0px;
+    border: solid 5px transparent;
+    border-bottom-color: black;
+    position: absolute;
+    margin-top: 3px;
+    margin-left: 4px;
   }
 </style>
 
@@ -363,10 +510,59 @@
     alt="Angular Logo"
     src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTAgMjUwIj4KICAgIDxwYXRoIGZpbGw9IiNERDAwMzEiIGQ9Ik0xMjUgMzBMMzEuOSA2My4ybDE0LjIgMTIzLjFMMTI1IDIzMGw3OC45LTQzLjcgMTQuMi0xMjMuMXoiIC8+CiAgICA8cGF0aCBmaWxsPSIjQzMwMDJGIiBkPSJNMTI1IDMwdjIyLjItLjFWMjMwbDc4LjktNDMuNyAxNC4yLTEyMy4xTDEyNSAzMHoiIC8+CiAgICA8cGF0aCAgZmlsbD0iI0ZGRkZGRiIgZD0iTTEyNSA1Mi4xTDY2LjggMTgyLjZoMjEuN2wxMS43LTI5LjJoNDkuNGwxMS43IDI5LjJIMTgzTDEyNSA1Mi4xem0xNyA4My4zaC0zNGwxNy00MC45IDE3IDQwLjl6IiAvPgogIDwvc3ZnPg=="
   /> -->
-  <span style="padding-left:100px">Cloud Applications</span>
+  <div style="display: inline-block; position: relative; width: 30px; height: 30px; padding-left: 20px;">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      version="1.1"
+      id="Capa_1"
+      x="0px"
+      y="0px"
+      viewBox="0 0 368 368">
+      <path
+        style="fill:#ffee6c;"
+        d="M152,24v112c0,8.8-7.2,16-16,16H24c-8.8,0-16-7.2-16-16V24c0-8.8,7.2-16,16-16h112  C144.8,8,152,15.2,152,24z"
+        id="path2" />
+      <g
+        id="g12">
+        <path
+        style="fill:#66e88b;"
+        d="M136,0H24C10.768,0,0,10.768,0,24v112c0,13.232,10.768,24,24,24h112c13.232,0,24-10.768,24-24V24   C160,10.768,149.232,0,136,0z M144,136c0,4.408-3.592,8-8,8H24c-4.408,0-8-3.592-8-8V24c0-4.408,3.592-8,8-8h112   c4.408,0,8,3.592,8,8V136z"
+        id="path4" />
+        <path
+        style="fill:#66e88b;"
+        d="M344,0H232c-13.232,0-24,10.768-24,24v112c0,13.232,10.768,24,24,24h112c13.232,0,24-10.768,24-24   V24C368,10.768,357.232,0,344,0z M352,136c0,4.408-3.584,8-8,8H232c-4.416,0-8-3.592-8-8V24c0-4.408,3.584-8,8-8h112   c4.416,0,8,3.592,8,8V136z"
+        id="path6" />
+        <path
+        style="fill:#66e88b;"
+        d="M136,208H24c-13.232,0-24,10.768-24,24v112c0,13.232,10.768,24,24,24h112c13.232,0,24-10.768,24-24   V232C160,218.768,149.232,208,136,208z M144,344c0,4.408-3.592,8-8,8H24c-4.408,0-8-3.592-8-8V232c0-4.408,3.592-8,8-8h112   c4.408,0,8,3.592,8,8V344z"
+        id="path8" />
+        <path
+        style="fill:#66e88b;"
+        d="M344,208H232c-13.232,0-24,10.768-24,24v112c0,13.232,10.768,24,24,24h112c13.232,0,24-10.768,24-24   V232C368,218.768,357.232,208,344,208z M352,344c0,4.408-3.584,8-8,8H232c-4.416,0-8-3.592-8-8V232c0-4.408,3.584-8,8-8h112   c4.416,0,8,3.592,8,8V344z"
+        id="path10" />
+      </g>
+    </svg>
+  </div>
+  <span style="padding-left:10px">Sentara Applications</span>
+    <div [class]="isFilterEmpty?'filter filtertext':'filter'" [style.display]="isLoggedIn?'block':'none'">
+      <input type="text" #filter (keyup)="filtertable()" tabindex="1" /> <img src="assets/funnel.svg" style="vertical-align: middle; margin-left: 10px;" />
+    </div>
     <div class="spacer"></div>
-    <a style="color: white; cursor: pointer; padding: 0 2px;" (click)="login()" title="Login">Login</a>
-    <a style="color: white; cursor: pointer; padding: 0 2px; padding-right: 20px" (click)="logout()" title="Logout">Logout</a>
+    <a #loginlink class="toolbarlink" style="cursor: pointer; padding: 0 2px; margin-right: 20px;" [style.display]="isLoggedIn?'none':'block'" (click)="login()" title="Login">Login</a>
+    <!-- <a class="toolbarlink" style="cursor: pointer; padding: 0 2px; padding-right: 20px" (click)="logout()" title="Logout">Logout</a> -->
+    <span class="profiledropdownarrow" *ngIf="isLoggedIn" tabindex="2"></span>
+    <img class="profilepic" src="assets/user.svg" #profilepic [style.display]="isLoggedIn?'block':'none'" width="30" height="30" tabindex="3"  />
+    <div [class]="isLoggedIn?'profilepanel':'hiddenpanel'" tabindex="4">      <!-- [style.display]="isLoggedIn?'block':'none'" -->
+      <div>Signed in as <span style="font-weight: bold;">{{username}}</span></div>
+      <hr />
+      <div>{{fullname}}</div>
+      <div style="margin-top: 4px;">
+        <img class="profilepic2" src="assets/user.svg" #profilepic2 width="100" height="100"/>
+      </div>
+      <div style="float:right;">
+        <span class="signout" (click)="logout()" >Sign out</span>
+      </div>
+    </div>
     <!-- <a aria-label="Angular on twitter" target="_blank" rel="noopener" href="https://twitter.com/angular" title="Twitter">
       <svg id="twitter-logo" height="24" data-name="Logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
         <rect width="400" height="400" fill="none"/>
@@ -375,45 +571,107 @@
     </a> -->
 </div>
 
-<div class="content" role="main">
-  <div class="filter">
-    Filter: <input type="text" #filter (keyup)="filtertable()" />
-  </div>
+<div class="content" role="main" [style.display]="isLoggedIn?'block':'none'">
+  
   
   <div class="datatable">
-    <h3>InTune applications</h3>
+    <h3 style='margin-left: 10px;'>InTune applications</h3>
     <tgt-uxlib-table #uxtable [defer]=true>
       <table class="intuneDataTable">
-        <thead>
+        <thead class="unselectable">
           <th [attr.isStaticWidth]="true"></th>
-          <th>Name</th>
-          <th>Publisher</th>
+          <th (click)="setSortOptions('displayName', 'string')">
+            Name
+            <span *ngIf="sortoptions.propname=='displayName'" [class]="sortoptions.direction=='ASC'?'sortDownArrow':'sortUpArrow'"></span>
+          </th>
+          <th (click)="setSortOptions('publisher', 'string')">
+            Publisher
+            <span *ngIf="sortoptions.propname=='publisher'" [class]="sortoptions.direction=='ASC'?'sortDownArrow':'sortUpArrow'"></span>
+          </th>
+          <th (click)="setSortOptions('createdDateTime', 'number')">
+            Created
+            <span *ngIf="sortoptions.propname=='createdDateTime'" [class]="sortoptions.direction=='ASC'?'sortDownArrow':'sortUpArrow'"></span>
+          </th>
+          <th (click)="setSortOptions('lastModifiedDateTime', 'number')">
+            Last update
+            <span *ngIf="sortoptions.propname=='lastModifiedDateTime'" [class]="sortoptions.direction=='ASC'?'sortDownArrow':'sortUpArrow'"></span>
+          </th>
         </thead>
         <tbody>
           <!-- <ng-template ngFor let-item [ngForOf]="intuneData" let-i="index" let-lastrow="last" [ngForTrackBy]="trackIntuneItem">
             <div #finishedLoading="item">{{item.displayName}}</div>
           </ng-template> -->
-          <ng-template ngFor let-item [ngForOf]="intuneData" let-i="index" let-lastrow="last" [ngForTrackBy]="trackIntuneItem">
+          <ng-template ngFor let-item [ngForOf]="intuneViewData" let-i="index" let-lastrow="last" [ngForTrackBy]="trackIntuneItem">
             <tr *ngIf="!item.hidden" [attr.finishedLoading]="lastrow?tableloaded(lastrow):null">
-              <td class="expandercell unselectable" (click)="expand($event.target, item)" style="text-align: center; cursor: pointer;">&gt;</td>
+              <td class="expandercell unselectable" (click)="expand($event.target, item)" style="text-align: center; cursor: pointer;">
+                <!-- <img class="expandarrow" src="assets/rightarrow.svg" width="10" height="10" *ngIf="!item.expanded" />
+                <img class="expandarrow" src="assets/downarrow.svg" width="10" height="10" *ngIf="item.expanded" /> -->
+                <div *ngIf="!item.expanded" style="display: inline-block;">
+                  <svg class="expandarrow" xmlns="http://www.w3.org/2000/svg" width="2.5331588mm" height="2.9250398mm" viewBox="0 0 2.5331589 2.9250398">
+                    <g id="layer1" transform="translate(-45.725179,-73.722562)">
+                      <path                  
+                        sodipodi:type="star"
+                        style="stroke-width:0.17213"
+                        id="path833"
+                        sodipodi:sides="3"
+                        sodipodi:cx="46.569565"
+                        sodipodi:cy="75.185081"
+                        sodipodi:r1="1.6887724"
+                        sodipodi:r2="0.84438628"
+                        sodipodi:arg1="0"
+                        sodipodi:arg2="1.0471976"
+                        d="m 48.258337,75.185081 -1.266579,0.73126 -1.266579,0.73126 0,-1.46252 0,-1.462519 1.266579,0.73126 z" />
+                    </g>
+                  </svg>
+                </div>  
+                <div *ngIf="item.expanded" style="display: inline-block;">
+                  <svg class="expandarrow" xmlns="http://www.w3.org/2000/svg" width="2.9250398mm" height="2.5331588mm" viewBox="0 0 2.9250399 2.5331588">
+                    <g
+                      inkscape:label="Layer 1"
+                      inkscape:groupmode="layer"
+                      id="layer1"
+                      transform="translate(-45.107042,-74.340694)">
+                      <path
+                        sodipodi:type="star"
+                        style="stroke-width:0.17213"
+                        id="path833"
+                        sodipodi:sides="3"
+                        sodipodi:cx="46.569565"
+                        sodipodi:cy="75.185081"
+                        sodipodi:r1="1.6887724"
+                        sodipodi:r2="0.84438628"
+                        sodipodi:arg1="0"
+                        sodipodi:arg2="1.0471976"
+                        d="m 48.258337,75.185081 -1.266579,0.73126 -1.266579,0.73126 0,-1.46252 0,-1.462519 1.266579,0.73126 z"
+                        transform="rotate(90,46.569564,75.185079)" />
+                    </g>
+                  </svg>
+                </div> 
+              </td>
               <td>
                 {{item.displayName}}
               </td>
               <td>
                 {{item.publisher}}
               </td>
+              <td>
+                {{item.createdDateString}}
+              </td>
+              <td>
+                {{item.lastModifiedDateString}}
+              </td>
             </tr>
             <tr>
-              <td class="extraInfoCell" [style]="item.expanded?'display:table-cell':'display:none'" colspan="3"> <!--  -->
+              <td class="extraInfoCell" [style]="item.expanded?'display:table-cell':'display:none'" colspan="5"> <!--  -->
 
                 <h3 *ngIf="item.description">Description</h3>
-                <span *ngIf="item.description"><pre style="white-space: pre-wrap;">{{item.description}}</pre></span>
+                <span *ngIf="item.description"><pre style="white-space: pre-wrap; font-size: .85em">{{item.description}}</pre></span>
 
                 <h3 *ngIf="item.createdDateTime">Created date</h3>
-                <span *ngIf="item.createdDateTime">{{item.createdDateTime}}</span>
+                <span *ngIf="item.createdDateTime">{{item.createdDateString}}</span>
 
                 <h3 *ngIf="item.lastModifiedDateTime">Last modified date</h3>
-                <span *ngIf="item.lastModifiedDateTime">{{item.lastModifiedDateTime}}</span>
+                <span *ngIf="item.lastModifiedDateTime">{{item.lastModifiedDateString}}</span>
 
                 <h3 *ngIf="item.setupFilePath">Setup file path</h3>
                 <span *ngIf="item.setupFilePath">{{item.setupFilePath}}</span>

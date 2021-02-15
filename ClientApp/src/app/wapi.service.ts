@@ -12,4 +12,12 @@ export class WapiService {
   getintuneapps(): Observable<any> {
     return this.http.get('/api/intuneapps');
   }
+
+  getprofilepicmeta(): Observable<any> {
+    return this.http.get("https://graph.microsoft.com/beta/me/photo", { responseType: "json"});
+  }
+
+  getprofilepic(): Observable<any> {
+    return this.http.get("https://graph.microsoft.com/beta/me/photo/$value", { responseType: "arraybuffer"});
+  }
 }
