@@ -307,20 +307,25 @@
     }
   }
 
-  .intuneDataTable {
+  .intuneDataTable,
+  .sccmDataTable {
     border-collapse: collapse;
     font-size: .9em;
     /* width: 100%; */
     
   }
-  .intuneDataTable tr {
+  .intuneDataTable tr,
+  .sccmDataTable tr {
     max-height: 100px;
   }
-  .intuneDataTable th {
+  .intuneDataTable th,
+  .sccmDataTable th {
     background-color: #c2c3c4;
   }
   .intuneDataTable th,
-  .intuneDataTable td {
+  .intuneDataTable td,
+  .sccmDataTable th,
+  .sccmDataTable td {
     border: transparent;
     border-top: solid 1px #cccccc;
     border-bottom: solid 1px #cccccc;
@@ -330,17 +335,25 @@
     padding: 4px 6px;
   }
   .intuneDataTable thead th:first-child,
-  .intuneDataTable tbody tr td:first-child {
+  .intuneDataTable tbody tr td:first-child,
+  .sccmDataTable thead th:first-child,
+  .sccmDataTable tbody tr td:first-child {
     border-left: solid 1px #cccccc;
   }
   .intuneDataTable thead th:last-child,
-  .intuneDataTable tbody tr td:last-child {
+  .intuneDataTable tbody tr td:last-child,
+  .sccmDataTable thead th:last-child,
+  .sccmDataTable tbody tr td:last-child {
     border-right: solid 1px #cccccc;
   }
   .intuneDataTable tr:nth-child(4n+1) {
     background-color: #eee;
   }
-  .datatable {
+  .sccmDataTable tr:nth-child(2n) {
+    background-color: #eee;
+  }
+  .datatable,
+  .sccm_datatable {
     position: absolute;
     top: 0px;
     left: 0px;
@@ -349,6 +362,10 @@
     margin: 10px;
     overflow: auto;
     border: solid 1px #cccccc;
+  }
+
+  .sccm_datatable {
+    display: none;
   }
 
   .expandercell {
@@ -460,6 +477,7 @@
     border: solid 5px transparent;
     border-top-color: #e1ffc4;
     outline: none;
+    margin-top: 8px;
   } 
   .expandarrow g path {
     fill: #2c544f;
@@ -574,7 +592,7 @@
 <div class="content" role="main" [style.display]="isLoggedIn?'block':'none'">
   
   
-  <div class="datatable">
+  <div #intunedatacontainer class="datatable">
     <h3 style='margin-left: 10px;'>InTune applications</h3>
     <tgt-uxlib-table #uxtable [defer]=true>
       <table class="intuneDataTable">
@@ -587,6 +605,9 @@
           <th (click)="setSortOptions('publisher', 'string')">
             Publisher
             <span *ngIf="sortoptions.propname=='publisher'" [class]="sortoptions.direction=='ASC'?'sortDownArrow':'sortUpArrow'"></span>
+          </th>
+          <th>
+            Source
           </th>
           <th (click)="setSortOptions('createdDateTime', 'number')">
             Created
@@ -655,6 +676,9 @@
                 {{item.publisher}}
               </td>
               <td>
+                {{item.source}}
+              </td>
+              <td>
                 {{item.createdDateString}}
               </td>
               <td>
@@ -662,16 +686,28 @@
               </td>
             </tr>
             <tr>
-              <td class="extraInfoCell" [style]="item.expanded?'display:table-cell':'display:none'" colspan="5"> <!--  -->
+              <td class="extraInfoCell" [style]="item.expanded?'display:table-cell':'display:none'" colspan="6"> <!--  -->
+
+                <h3 *ngIf="item.SoftwareVersion">Version</h3>
+                <span *ngIf="item.SoftwareVersion">{{item.SoftwareVersion}}</span>
 
                 <h3 *ngIf="item.description">Description</h3>
                 <span *ngIf="item.description"><pre style="white-space: pre-wrap; font-size: .85em">{{item.description}}</pre></span>
+
+                <h3 *ngIf="item.AdminComments">Comments</h3>
+                <span *ngIf="item.AdminComments">{{item.AdminComments}}</span>
+
+                <h3 *ngIf="item.itempath">Microsoft Endpoint Configuration Manager Path</h3>
+                <span *ngIf="item.itempath">{{item.itempath}}</span>
 
                 <h3 *ngIf="item.createdDateTime">Created date</h3>
                 <span *ngIf="item.createdDateTime">{{item.createdDateString}}</span>
 
                 <h3 *ngIf="item.lastModifiedDateTime">Last modified date</h3>
                 <span *ngIf="item.lastModifiedDateTime">{{item.lastModifiedDateString}}</span>
+
+                <h3 *ngIf="item.LastModifiedBy">Last modified by</h3>
+                <span *ngIf="item.LastModifiedBy">{{item.LastModifiedBy}}</span>
 
                 <h3 *ngIf="item.setupFilePath">Setup file path</h3>
                 <span *ngIf="item.setupFilePath">{{item.setupFilePath}}</span>
@@ -698,7 +734,47 @@
           </tr> -->
         </tbody>
       </table>
-    </tgt-uxlib-table>
+    </tgt-uxlib-table>    
+  </div>
+
+  <div #sccmdatacontainer class="sccm_datatable">
+    <h3 style='margin-left: 10px;'>SCCM applications</h3>
+    <tgt-uxlib-table #uxsccmtable [defer]=true>
+      <table class="sccmDataTable">
+        <thead>
+          <th>
+            Name
+          </th>
+          <th>
+            Publisher
+          </th>
+          <th>
+            Created
+          </th>
+          <th>
+            Last update
+          </th>
+        </thead>
+        <tbody>
+          <ng-container *ngFor="let item of sccmViewData; index as i; last as lastrow">            
+            <tr *ngIf="item.rownum==1" [attr.finishedLoading]="lastrow?sccmtableloaded(lastrow):null">
+              <td>
+                {{item.DisplayName}}
+              </td>
+              <td>
+                {{item.Manufacturer}}
+              </td>
+              <td>
+                {{item.DateCreated}}
+              </td>
+              <td>
+                {{item.DateLastModified}}
+              </td>
+            </tr>
+          </ng-container>        
+        </tbody>
+      </table>
+    </tgt-uxlib-table>    
   </div>
 </div>
 

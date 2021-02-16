@@ -27,8 +27,8 @@ export function MSALInstanceFactory(): IPublicClientApplication {
       authority: `https://login.microsoftonline.com/${config.credentials.tenantID}`,
       navigateToLoginRequestUrl: true,
       clientId: config.credentials.spaclientid,
-      redirectUri: isDevMode()?'https://localhost:4200':'https://localhost:4000',
-      postLogoutRedirectUri: isDevMode()?'https://localhost:4200':'https://localhost:4000'
+      redirectUri: isDevMode()?'https://localhost:4200':'https://sentara-apps.itportal.sentara.com',
+      postLogoutRedirectUri: isDevMode()?'https://localhost:4200':'https://sentara-apps.itportal.sentara.com'
     },
     cache: {
       cacheLocation: BrowserCacheLocation.SessionStorage,

@@ -5,14 +5,15 @@ const https = require("https");
 const app = express();
 const morgan = require("morgan");
 const bodyParser = require("body-parser");
-const { access } = require("fs/promises");
-const { resolve } = require("path");
 const passport = require("passport");
 const BearerStrategy = require("passport-azure-ad").BearerStrategy;
 const OIDCStrategy = require("passport-azure-ad").OIDCStrategy;
 const config = require("./privatedata/config.json");
 const azureconfig = require("./privatedata/azure_authconfig.json");
-const { start } = require("repl");
+// For Microsoft SQL Server
+const Connection = require('tedious').Connection;
+const Request = require('tedious').Request;  
+const TYPES = require('tedious').TYPES;
 
 //const cookieParser = require("cookie-parser");
 
@@ -30,7 +31,7 @@ const beareroptions = {
 
 const bearerStrategy = new BearerStrategy(beareroptions, (token, done) => {
     // Send user info using the second argument
-    console.log(token);
+    //console.log(token);
     done(null, {}, token);
 });
 
@@ -147,7 +148,7 @@ passport.serializeUser(function(user, done) {
 
 passport.deserializeUser(function(oid, done) {
   //findByOid(oid, function (err, user) {
-    console.log(this);
+    //console.log(this);
     done(null, "test");
   //});
 });
@@ -175,7 +176,7 @@ app.get
     passport.authenticate("oauth-bearer", { session: false }),
     ensureRoles(config.requiredGroups),
     async (req, res) => {
-        console.log(req);
+        //console.log(req);
         lastrequested = Date.now();
         if(lastupdate==null) {
             lastupdate = lastrequested;
@@ -186,6 +187,7 @@ app.get
         if(dataCache!=null && minutessince < 30) {
             console.log("Sending cached data");
             console.log(`Data age is ${millisecondsSinceLastReq/1000} seconds.`);
+            //let sccmdata = await GetSccmApps();
             res.status(200).json({ status: "OK", data: dataCache, lastupdate: lastupdate });
         }
         else {
@@ -193,15 +195,24 @@ app.get
             getAccessToken()
             .then(async (token) => {
                 if(token) {       
-                    console.log("Got token");
+                    console.log("Got token for msgraph intune api");
                     console.log("**************************************");
                     console.log("Getting intune app data...");            
                     let data = await fetchIntuneData(token);
-                    dataCache = data;
-                    console.log(data);
+                    data.value.forEach(r=>{
+                        r.source = "Intune";
+                    });
+                    let sccmdata = await GetSccmApps();
+                    sccmdata.forEach(r=>{
+                        r.source = "SCCM";
+                    });
+                    dataCache = JSON.parse(JSON.stringify(data));
+                    dataCache.value = dataCache.value.concat(sccmdata);
+                    //Object.assign(dataCache.value, sccmdata);
+                    //console.log(data);
                     lastupdate = Date.now();
                     //startDataRefresher();
-                    res.status(200).json({ status: "OK", data: data, lastupdate: lastupdate });
+                    res.status(200).json({ status: "OK", data: dataCache, lastupdate: lastupdate });
                 }
             })
             .catch(err => {
@@ -355,5 +366,129 @@ async function fetchIntuneData(accessToken) {
         var intunereq = https.request(intunereqoptions, intune_callback);
         intunereq.write(intunereqdata);
         intunereq.end();
+    });
+}
+
+async function GetSccmApps() {
+    return new Promise((res, rej) => {    
+        var sqlconfig = {  
+            server: config.mssql.server,  //update me
+            authentication: {
+                type: 'default',
+                options: {
+                    userName: config.mssql.userName, //update me
+                    password: config.mssql.password  //update me
+                }
+            },
+            options: {
+                // If you are on Microsoft Azure, you need encryption:
+                encrypt: false,
+                database: config.mssql.database,  //update me,
+                rowCollectionOnDone: true
+            }
+        };  
+        var connection = new Connection(sqlconfig);  
+        connection.on('connect', function(err) {  
+            // If no error, then good to proceed.
+            //console.log("Connected");  
+        });
+        
+        connection.connect((err)=>{
+            if(!err){
+                executeSelect();
+            }
+        });
+
+        // SELECT DATA
+        function executeSelect() {  
+            request = new Request(
+                `SELECT * FROM (
+                    SELECT 
+                           ROW_NUMBER() OVER(PARTITION BY app.[DisplayName] ORDER BY config.[DateLastModified] DESC) as rownum
+                          ,app.[DisplayName] as displayName
+                          ,itempath = CASE
+                            WHEN folders.ObjectPath IS NULL THEN '/'
+                            ELSE folders.ObjectPath
+                            END
+                          ,config.[DateCreated] as createdDateTime
+                          ,config.[DateLastModified] as lastModifiedDateTime
+                          ,config.[LastModifiedBy]
+                          ,app.[AdminComments]
+                          ,app.[Manufacturer] as publisher
+                          ,app.[SoftwareVersion]	  
+                      FROM [CM_IND].[dbo].[v_Applications] as app
+                      LEFT OUTER JOIN [CM_IND].[dbo].[v_ConfigurationItems] as config on app.[ModelName] = config.[ModelName]
+                      LEFT OUTER JOIN [CM_IND].[dbo].[vFolderMembers] folders ON app.[ModelName] = folders.[InstanceKey] 
+                    ) partitionedTable
+                    WHERE rownum = 1
+                    order by itempath, displayName, rownum`,
+                function(err) {  
+                    if (err) {  
+                        console.log(err);
+                    }  
+                }
+            );  
+
+            var result = "";  
+            var alldata = [];
+            request.on('row', function(columns) {  
+                let dataObject = {
+                    rownum: '',             //0
+                    displayName: '',        //1
+                    itempath: '',           //2
+                    createdDateTime: '',        //3
+                    lastModifiedDateTime: '',   //4
+                    LastModifiedBy: '',     //5
+                    AdminComments: '',      //6
+                    publisher: '',       //7
+                    SoftwareVersion: ''     //8
+                };
+                let colIndex = 0;
+                columns.forEach(function(column) {
+                    dataObject[column.metadata.colName] = column.value;
+                    colIndex++;
+                });
+                alldata.push(dataObject);  
+            });  
+    
+            request.on('done', function(rowCount, more) {  
+                //console.log(alldata);
+                //console.log(rowCount + ' rows returned');  
+            });  
+
+            request.on('requestCompleted', function () {
+                res(alldata);
+                //console.dir(alldata);
+                //console.log(rowCount + ' rows returned');  
+            });
+
+            request.on('error', function (err) {
+                rej(err);                
+             });
+
+            connection.execSql(request);  
+        }  
+
+        // INSERT DATA
+        function executeInsert() {  
+            request = new Request("INSERT SalesLT.Product (Name, ProductNumber, StandardCost, ListPrice, SellStartDate) OUTPUT INSERTED.ProductID VALUES (@Name, @Number, @Cost, @Price, CURRENT_TIMESTAMP);", function(err) {  
+            if (err) {  
+                console.log(err);}  
+            });  
+            request.addParameter('Name', TYPES.NVarChar,'SQL Server Express 2014');  
+            request.addParameter('Number', TYPES.NVarChar , 'SQLEXPRESS2014');  
+            request.addParameter('Cost', TYPES.Int, 11);  
+            request.addParameter('Price', TYPES.Int,11);  
+            request.on('row', function(columns) {  
+                columns.forEach(function(column) {  
+                if (column.value === null) {  
+                    console.log('NULL');  
+                } else {  
+                    console.log("Product id of inserted item is " + column.value);  
+                }  
+                });  
+            });       
+            connection.execSql(request);  
+        } 
     });
 }

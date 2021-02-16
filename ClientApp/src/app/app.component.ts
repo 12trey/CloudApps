@@ -61,7 +61,11 @@ export class AppComponent implements
   public intuneData: any[] = [];
   public intuneViewData: any[] = [];
 
+  public sccmData: any[] = [];
+  public sccmViewData: any[] = [];
+
   @ViewChild('uxtable') uxtable: TgtUxlibComponent;
+  @ViewChild('uxsccmtable') uxsccmtable: TgtUxlibComponent;
   @ViewChild('filter') filter: ElementRef;
   @ViewChild('loginlink') loginlink: ElementRef;
   @ViewChild('profilepic') profilepic: ElementRef;
@@ -93,6 +97,15 @@ export class AppComponent implements
   public tableloaded(isready: any): void {
     if (this.uxtable.defer) {
       this.uxtable.init();
+    }
+    else {
+      //this.refreshTableHandles();
+    }
+  }
+
+  public sccmtableloaded(isready: any): void {
+    if (this.uxsccmtable.defer) {
+      this.uxsccmtable.init();
     }
     else {
       //this.refreshTableHandles();
@@ -238,8 +251,12 @@ export class AppComponent implements
     this.wapi.getintuneapps().subscribe(r => {
       //console.log(r);
       if (r.status == "OK") {
+        console.log(r);
         this.intuneData = r.data.value;
+        //this.sccmData = r.sccmdata;
+
         this.intuneViewData = JSON.parse(JSON.stringify(this.intuneData));
+        //this.sccmViewData = JSON.parse(JSON.stringify(this.sccmData));
 
         this.addDateString();
         this.sortBy(this.intuneViewData, this.sortoptions);
