@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "ng serve  --ssl=true --ssl-cert=\"../privatedata/cert/cert.pem\" --ssl-key=\"../privatedata/cert/key.pem\" --proxy-config=\"src/proxy.conf.json\"",
     "build": "ng build",
     "test": "ng test",
     "lint": "ng lint",

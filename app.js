@@ -2,6 +2,7 @@ const fs = require("fs");
 const express = require("express");
 const sslport = 4000;
 const https = require("https");
+const http = require("http");
 const app = express();
 const morgan = require("morgan");
 const bodyParser = require("body-parser");
@@ -163,9 +164,11 @@ const httpsOptions = {
     cert: fs.readFileSync("privatedata/cert/cert.pem"),
 };
 
-const httpsServer = https.createServer(httpsOptions);
+//const httpsServer = https.createServer(httpsOptions);
+const httpServer = http.createServer();
 
-httpsServer.on("request", app);
+//httpsServer.on("request", app);
+httpServer.on("request", app);
 
 /** /api/intuneapps
  * API method for intune apps
@@ -203,9 +206,9 @@ app.get
                         r.source = "Intune";
                     });
                     let sccmdata = await GetSccmApps();
-                    sccmdata.forEach(r=>{
-                        r.source = "SCCM";
-                    });
+                    // sccmdata.forEach(r=>{
+                    //     r.source = "SCCM";
+                    // });                    
                     dataCache = JSON.parse(JSON.stringify(data));
                     dataCache.value = dataCache.value.concat(sccmdata);
                     //Object.assign(dataCache.value, sccmdata);
@@ -283,8 +286,13 @@ app.get
     res.sendFile("./ClientApp/dist/ClientApp/index.html");
 });
 
-console.log("Starting up https server...");
-httpsServer.listen(sslport, ()=>{
+// console.log("Starting up https server...");
+// httpsServer.listen(sslport, ()=>{
+//     console.log(`listening on port ${sslport}`);
+// });
+
+console.log("Starting up http server...");
+httpServer.listen(sslport, ()=>{
     console.log(`listening on port ${sslport}`);
 });
 
@@ -393,81 +401,213 @@ async function GetSccmApps() {
             //console.log("Connected");  
         });
         
-        connection.connect((err)=>{
+        connection.connect(async (err)=>{
             if(!err){
-                executeSelect();
+                let apps = await executeAppSelect(); 
+                apps.forEach(r=>{
+                    r.source = "SCCM Application";
+                }); 
+                let packages = await executePackageSelect();     
+                packages.forEach(r=>{
+                    r.source = "SCCM Package";
+                });   
+                let allsccmdata = apps.concat(packages);
+                res(allsccmdata);        
             }
         });
 
         // SELECT DATA
-        function executeSelect() {  
-            request = new Request(
-                `SELECT * FROM (
-                    SELECT 
-                           ROW_NUMBER() OVER(PARTITION BY app.[DisplayName] ORDER BY config.[DateLastModified] DESC) as rownum
-                          ,app.[DisplayName] as displayName
-                          ,itempath = CASE
-                            WHEN folders.ObjectPath IS NULL THEN '/'
-                            ELSE folders.ObjectPath
-                            END
-                          ,config.[DateCreated] as createdDateTime
-                          ,config.[DateLastModified] as lastModifiedDateTime
-                          ,config.[LastModifiedBy]
-                          ,app.[AdminComments]
-                          ,app.[Manufacturer] as publisher
-                          ,app.[SoftwareVersion]	  
-                      FROM [CM_IND].[dbo].[v_Applications] as app
-                      LEFT OUTER JOIN [CM_IND].[dbo].[v_ConfigurationItems] as config on app.[ModelName] = config.[ModelName]
-                      LEFT OUTER JOIN [CM_IND].[dbo].[vFolderMembers] folders ON app.[ModelName] = folders.[InstanceKey] 
-                    ) partitionedTable
-                    WHERE rownum = 1
-                    order by itempath, displayName, rownum`,
-                function(err) {  
-                    if (err) {  
-                        console.log(err);
-                    }  
-                }
-            );  
+        async function executeAppSelect() {  
+            return new Promise((res, rej) => {            
+                request = new Request(
+                    `SELECT * FROM (
+                        SELECT 
+                            ROW_NUMBER() OVER(PARTITION BY app.[DisplayName] ORDER BY config.[DateLastModified] DESC) as rownum
+                            ,app.[DisplayName] as displayName
+                            ,itempath = CASE
+                                WHEN folders.ObjectPath IS NULL THEN '/'
+                                ELSE folders.ObjectPath
+                                END
+                            ,config.[DateCreated] as createdDateTime
+                            ,config.[DateLastModified] as lastModifiedDateTime
+                            ,config.[LastModifiedBy]
+                            ,app.[AdminComments]
+                            ,app.[Manufacturer] as publisher
+                            ,app.[SoftwareVersion]	  
+                        FROM [CM_IND].[dbo].[v_Applications] as app
+                        LEFT OUTER JOIN [CM_IND].[dbo].[v_ConfigurationItems] as config on app.[ModelName] = config.[ModelName]
+                        LEFT OUTER JOIN [CM_IND].[dbo].[vFolderMembers] folders ON app.[ModelName] = folders.[InstanceKey] 
+                        ) partitionedTable
+                        WHERE rownum = 1
+                        order by itempath, displayName, rownum`,
+                    function(err) {  
+                        if (err) {  
+                            console.log(err);
+                        }  
+                    }
+                );  
 
-            var result = "";  
-            var alldata = [];
-            request.on('row', function(columns) {  
-                let dataObject = {
-                    rownum: '',             //0
-                    displayName: '',        //1
-                    itempath: '',           //2
-                    createdDateTime: '',        //3
-                    lastModifiedDateTime: '',   //4
-                    LastModifiedBy: '',     //5
-                    AdminComments: '',      //6
-                    publisher: '',       //7
-                    SoftwareVersion: ''     //8
-                };
-                let colIndex = 0;
-                columns.forEach(function(column) {
-                    dataObject[column.metadata.colName] = column.value;
-                    colIndex++;
+                var result = "";  
+                var alldata = [];
+                request.on('row', function(columns) {  
+                    let dataObject = {
+                        rownum: '',             //0
+                        displayName: '',        //1
+                        itempath: '',           //2
+                        createdDateTime: '',        //3
+                        lastModifiedDateTime: '',   //4
+                        LastModifiedBy: '',     //5
+                        AdminComments: '',      //6
+                        publisher: '',       //7
+                        SoftwareVersion: ''     //8
+                    };
+                    let colIndex = 0;
+                    columns.forEach(function(column) {
+                        dataObject[column.metadata.colName] = column.value;
+                        colIndex++;
+                    });
+                    alldata.push(dataObject);  
+                });  
+        
+                request.on('done', function(rowCount, more) {  
+                    //console.log(alldata);
+                    //console.log(rowCount + ' rows returned');  
+                });  
+
+                request.on('requestCompleted', function () {
+                    res(alldata);
+                    //console.dir(alldata);
+                    //console.log(rowCount + ' rows returned');  
                 });
-                alldata.push(dataObject);  
-            });  
-    
-            request.on('done', function(rowCount, more) {  
-                //console.log(alldata);
-                //console.log(rowCount + ' rows returned');  
-            });  
 
-            request.on('requestCompleted', function () {
-                res(alldata);
-                //console.dir(alldata);
-                //console.log(rowCount + ' rows returned');  
+                request.on('error', function (err) {
+                    rej(err);                
+                });
+
+                connection.execSql(request);  
             });
-
-            request.on('error', function (err) {
-                rej(err);                
-             });
-
-            connection.execSql(request);  
         }  
+
+        async function executePackageSelect() {  
+            return new Promise((res, rej) => {  
+                request = new Request(
+                    `SELECT [PkgID]
+                    ,[Name] as displayName
+                    ,[Version] as SoftwareVersion
+                    ,[Language]
+                    ,[Manufacturer] as publisher
+                    ,[PreDownloadRule]
+                    ,[DriverManufacturer]
+                    ,[DriverModel]
+                    ,[DriverOSVersion]
+                    ,[BaseBoardProductID]
+                    ,[DriverPkgVersion]
+                    ,[Description] as description
+                    ,[Source]
+                    ,[SourceSite]
+                    ,[StoredPkgPath]
+                    ,[RefreshSchedule]
+                    ,[LastRefresh] as lastModifiedDateTime
+                    ,[ShareName]
+                    ,[PreferredAddress]
+                    ,[StoredPkgVersion]
+                    ,[StorePkgFlag]
+                    ,[ShareType]
+                    ,[Permission]
+                    ,[UseForcedDisconnect]
+                    ,[ForcedRetryDelay]
+                    ,[DisconnectDelay]
+                    ,[IgnoreSchedule]
+                    ,[Priority]
+                    ,[PkgFlags]
+                    ,[MIFFilename]
+                    ,[MIFPublisher]
+                    ,[MIFName]
+                    ,[MIFVersion]
+                    ,[SourceVersion]
+                    ,[SourceDate] as createdDateTime
+                    ,[SourceSize] as size
+                    ,[SourceCompSize]
+                    ,[UpdateMask]
+                    ,[Action]
+                    ,[Icon]
+                    ,[Hash]
+                    ,[ExtData]
+                    ,[ImageFlags]
+                    ,[UpdateMaskEx]
+                    ,[ISVData]
+                    ,[HashVersion]
+                    ,[NewHash]
+                    ,[ImagePath]
+                    ,[Architecture]
+                    ,[PackageType]
+                    ,[AlternateContentProviders]
+                    ,[DefaultImage]
+                    ,[SourceLocaleID]
+                    ,[SEDOComponentID]
+                    ,[TransformReadiness]
+                    ,[TransformAnalysisDate]
+                    ,[SedoObjectVersion]
+                    ,[EncryptionKey]
+                    ,[EncryptionAlgorithm]
+                    ,[CryptoExtInfo]
+                    ,[rowversion]
+                    ,[MinRequiredVersion]
+                    ,[ISVString]
+                    ,[NumOfPrograms]
+                    ,[IsVersionCompatible]
+                    ,[IsPredefinedPackage]
+                    ,[ObjectPath] as itempath
+                FROM [CM_IND].[dbo].[vSMS_Package_List]
+                ORDER BY Name`,
+                    function(err) {  
+                        if (err) {  
+                            console.log(err);
+                        }  
+                    }
+                );  
+
+                var result = "";  
+                var alldata = [];
+                request.on('row', function(columns) {  
+                    let dataObject = {
+                        rownum: '',             //0
+                        displayName: '',        //1
+                        itempath: '',           //2
+                        createdDateTime: '',        //3
+                        lastModifiedDateTime: '',   //4
+                        LastModifiedBy: '',     //5
+                        AdminComments: '',      //6
+                        publisher: '',       //7
+                        SoftwareVersion: ''     //8
+                    };
+                    let colIndex = 0;
+                    columns.forEach(function(column) {
+                        dataObject[column.metadata.colName] = column.value;
+                        colIndex++;
+                    });
+                    alldata.push(dataObject);  
+                });  
+        
+                request.on('done', function(rowCount, more) {  
+                    //console.log(alldata);
+                    //console.log(rowCount + ' rows returned');  
+                });  
+
+                request.on('requestCompleted', function () {
+                    res(alldata);                
+                    connection.close();
+                    //console.dir(alldata);
+                    //console.log(rowCount + ' rows returned');  
+                });
+
+                request.on('error', function (err) {
+                    rej(err);                
+                });
+
+                connection.execSql(request);    
+            });
+        } 
 
         // INSERT DATA
         function executeInsert() {  

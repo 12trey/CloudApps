@@ -36,7 +36,7 @@ import * as config from '../../../privatedata/config.json';
 
 /** Valid options interface for sorting */
 interface SortOptions {
-  propname: 'createdDateTime' | 'lastModifiedDateTime' | 'displayName' | 'publisher',
+  propname: 'createdDateTime' | 'lastModifiedDateTime' | 'displayName' | 'publisher' | 'source',
   proptype: 'number' | 'string',
   direction?: 'ASC' | 'DESC'
 };
@@ -61,11 +61,7 @@ export class AppComponent implements
   public intuneData: any[] = [];
   public intuneViewData: any[] = [];
 
-  public sccmData: any[] = [];
-  public sccmViewData: any[] = [];
-
   @ViewChild('uxtable') uxtable: TgtUxlibComponent;
-  @ViewChild('uxsccmtable') uxsccmtable: TgtUxlibComponent;
   @ViewChild('filter') filter: ElementRef;
   @ViewChild('loginlink') loginlink: ElementRef;
   @ViewChild('profilepic') profilepic: ElementRef;
@@ -103,15 +99,6 @@ export class AppComponent implements
     }
   }
 
-  public sccmtableloaded(isready: any): void {
-    if (this.uxsccmtable.defer) {
-      this.uxsccmtable.init();
-    }
-    else {
-      //this.refreshTableHandles();
-    }
-  }
-
   ngOnInit(): void {
     this.isIframe = window !== window.parent && !window.opener;
     this.setLoginDisplay();
@@ -140,31 +127,6 @@ export class AppComponent implements
         this.setLoginDisplay();
         //console.log(err);
       });
-
-    // let bssub = this.msalBroadcastService.msalSubject$
-    // .pipe(
-    //   filter((evm: EventMessage) => {
-    //     return (
-    //       evm.eventType == EventType.LOGIN_SUCCESS ||
-    //       evm.eventType === EventType.ACQUIRE_TOKEN_SUCCESS
-    //     );
-    //   }),
-    //   takeUntil(this._destroying$)
-    // )
-    // .subscribe(
-    //   (message) => {
-    //     //console.log("**Broadcast service event received**");
-    //     //console.log(message);
-    //     //this.checkAccount();
-    //   },
-    //   (err) => {
-    //     console.log('**Broadcast service error received**');
-    //     console.log(err);
-    //   },
-    //   function complete() {
-    //     //console.log("**Broadcast service finished**");
-    //   }
-    // );
   }
 
   private setLoginDisplay() {
@@ -253,10 +215,8 @@ export class AppComponent implements
       if (r.status == "OK") {
         console.log(r);
         this.intuneData = r.data.value;
-        //this.sccmData = r.sccmdata;
 
         this.intuneViewData = JSON.parse(JSON.stringify(this.intuneData));
-        //this.sccmViewData = JSON.parse(JSON.stringify(this.sccmData));
 
         this.addDateString();
         this.sortBy(this.intuneViewData, this.sortoptions);
@@ -291,12 +251,6 @@ export class AppComponent implements
     this.sortoptions.proptype = proptype;
     this.sortBy(this.intuneViewData);
   }
-
-  // private intuneViewDataComparer(a, b): number {
-  //   console.log(parseInt(a.createdDateTime));
-  //   let result = Date.parse(a.createdDateTime) - Date.parse(b.createdDateTime);
-  //   return result;
-  // }
 
   private sortBy(targetArray: any[], sortoptions: SortOptions = this.sortoptions): void {
     targetArray.sort((a, b) => {
